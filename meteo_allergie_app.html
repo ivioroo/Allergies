@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Allergie</title>
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5289/5289225.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5289/5289225.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Allergie">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <style>
+        :root {
+            --color-background-primary: #ffffff;
+            --color-background-secondary: #f5f5f7;
+            --color-text-primary: #1d1d1f;
+            --color-text-secondary: #86868b;
+            --color-border: #d2d2d7;
+            --color-info: #0071e3;
+            --border-radius-lg: 16px;
+            --border-radius-md: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--color-background-secondary); 
+            color: var(--color-text-primary);
+            overflow-x: hidden;
+        }
+
+        .app { max-width: 420px; margin: 0 auto; padding: env(safe-area-inset-top) 16px 40px; background: var(--color-background-primary); min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+
+        .header { text-align: center; margin-bottom: 24px; padding-top: 20px; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header p { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+
+        /* Barra di Ricerca */
+        .search-container { margin-bottom: 20px; }
+        .search-box { display: flex; gap: 8px; }
+        .search-box input { flex: 1; padding: 12px 16px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border); font-size: 16px; outline: none; transition: border-color 0.2s; background: #fff; }
+        .search-box input:focus { border-color: var(--color-info); }
+        .search-box button { padding: 0 16px; background: var(--color-info); color: white; border: none; border-radius: var(--border-radius-md); font-weight: 600; cursor: pointer; }
+        
+        .maps-link { font-size: 12px; color: var(--color-info); margin-top: 10px; cursor: pointer; text-decoration: none; display: none; font-weight: 500; text-align: center; }
+
+        .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 24px; }
+        .summary-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px 4px; text-align: center; }
+        .summary-card .s-label { font-size: 10px; color: var(--color-text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+        .summary-card .s-value { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .section-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+        .pollen-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+        .pollen-card {
+            background: var(--color-background-primary); border: 1px solid #f0f0f0; border-radius: var(--border-radius-lg);
+            padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s;
+        }
+        .pollen-card:active { background: #f9f9f9; }
+        .pollen-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .pollen-info { flex: 1; }
+        .pollen-name { font-size: 15px; font-weight: 500; }
+        .pollen-level { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+
+        .risk-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+        .risk-low { background: #EAF3DE; color: #3B6D11; }
+        .risk-medium { background: #FAEEDA; color: #854F0B; }
+        .risk-high { background: #FCEBEB; color: #A32D2D; }
+
+        .forecast-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .forecast-strip::-webkit-scrollbar { display: none; }
+        .day-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px; text-align: center; min-width: 65px; border: 1px solid transparent; }
+        .day-card.today { border-color: var(--color-info); background: #f0f7ff; }
+
+        /* Pannello Dettaglio */
+        .detail-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: flex-end; z-index: 1000; }
+        .detail-panel.open { display: flex; }
+        .detail-inner { background: white; border-radius: 24px 24px 0 0; padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); width: 100%; max-height: 80vh; overflow-y: auto; }
+        .detail-handle { width: 36px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 20px; }
+
+        /* Icon Colors */
+        .icon-bg-amber { background: #FAEEDA; }
+        .icon-bg-green { background: #EAF3DE; }
+        .icon-bg-teal { background: #E1F5EE; }
+        .icon-bg-purple { background: #EEEDFE; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="header">
+        <h1>🌿 Meteo Allergie</h1>
+        <p id="statusLabel">Inserisci una città</p>
+    </div>
+
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="Cerca città o indirizzo..." autocomplete="off">
+            <button onclick="searchCity()">Cerca</button>
+        </div>
+        <a id="mapsLink" class="maps-link" target="_blank">📍 Vedi posizione su Google Maps</a>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="s-label">Rischio</div>
+            <div id="todayRisk" class="s-value">-</div>
+        </div>
+        <div class="summary-card">
+            <div class="s-label">Picco</div>
+            <div id="maxType" class="s-value">-</div>
+        </div>
+        <div class="summary-card">
+            <div class="s-label">Stato</div>
+            <div id="statusVal" class="s-value">Pronto</div>
+        </div>
+    </div>
+
+    <div class="section-title">Livelli Pollini Attuali</div>
+    <div class="pollen-list" id="pollenList">
+        <p style="text-align:center; color:#999; padding:20px; font-size:14px;">Caricamento dati...</p>
+    </div>
+
+    <div class="section-title">Previsione Settimanale</div>
+    <div class="forecast-strip" id="forecastStrip"></div>
+</div>
+
+<div class="detail-panel" id="detailPanel" onclick="if(event.target === this) closeDetail()">
+    <div class="detail-inner">
+        <div class="detail-handle"></div>
+        <h2 id="detailName" style="margin-bottom: 12px;"></h2>
+        <p id="detailBody" style="line-height:1.6; color:#444; font-size:15px;"></p>
+        <button onclick="closeDetail()" style="margin-top:24px; width:100%; padding:16px; border-radius:14px; border:none; background:var(--color-background-secondary); font-weight:600; cursor:pointer; font-size:16px;">Chiudi</button>
+    </div>
+</div>
+
+<script>
+const POLLEN_CONFIG = {
+    'grass_pollen': { name: 'Graminacee', icon: '🌾', bg: 'icon-bg-amber', desc: 'Le graminacee sono diffuse ovunque. Il polline è leggero e viaggia per chilometri. Si consiglia di tenere le finestre chiuse nelle ore centrali.' },
+    'birch_pollen': { name: 'Betullacee', icon: '🌳', bg: 'icon-bg-green', desc: 'Fioritura intensa tipica della primavera. Può causare fastidi mangiando frutta fresca (cross-reattività).' },
+    'olive_pollen': { name: 'Oleacee', icon: '🫒', bg: 'icon-bg-teal', desc: 'Polline pesante ma molto allergenico. Tipico del centro-sud e zone lacustri.' },
+    'ragweed_pollen': { name: 'Ambrosia', icon: '🌿', bg: 'icon-bg-purple', desc: 'Fioritura tardo-estiva. È una delle allergie più aggressive per l\'apparato respiratorio.' },
+    'alder_pollen': { name: 'Ontano', icon: '🌲', bg: 'icon-bg-green', desc: 'Uno dei primi pollini a comparire a fine inverno. Attenzione ai primi caldi di febbraio.' },
+    'mugwort_pollen': { name: 'Artemisia', icon: '🌱', bg: 'icon-bg-purple', desc: 'Pianta erbacea molto diffusa in città e zone incolte. Fiorisce tra luglio e settembre.' }
+};
+
+function getRisk(val) {
+    if (val <= 1) return { label: 'Basso', cls: 'risk-low', color: '#639922' };
+    if (val <= 3) return { label: 'Medio', cls: 'risk-medium', color: '#BA7517' };
+    return { label: 'Alto', cls: 'risk-high', color: '#E24B4A' };
+}
+
+async function searchCity() {
+    const query = document.getElementById('cityInput').value;
+    if (!query) return;
+    document.getElementById('statusVal').textContent = "...";
+
+    try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+        const geoData = await geoRes.json();
+        if (geoData.length > 0) {
+            const loc = geoData[0];
+            updateMapsLink(loc.lat, loc.lon, loc.display_name);
+            fetchPollenData(loc.lat, loc.lon);
+        } else {
+            alert("Località non trovata.");
+            document.getElementById('statusVal').textContent = "Errore";
+        }
+    } catch (e) {
+        document.getElementById('statusVal').textContent = "Errore";
+    }
+}
+
+function updateMapsLink(lat, lon, name) {
+    const link = document.getElementById('mapsLink');
+    link.style.display = 'block';
+    link.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    document.getElementById('statusLabel').textContent = "Dati per: " + name.split(',')[0];
+}
+
+async function fetchPollenData(lat, lon) {
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=birch_pollen,grass_pollen,olive_pollen,ragweed_pollen,alder_pollen,mugwort_pollen&hourly=birch_pollen,grass_pollen,olive_pollen,ragweed_pollen,alder_pollen,mugwort_pollen&timezone=auto`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderCurrent(data.current);
+        renderForecast(data.hourly);
+        updateSummary(data.current);
+        document.getElementById('statusVal').textContent = "OK";
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderCurrent(current) {
+    const list = document.getElementById('pollenList');
+    list.innerHTML = '';
+    Object.keys(POLLEN_CONFIG).forEach(key => {
+        const val = current[key] || 0;
+        const config = POLLEN_CONFIG[key];
+        const risk = getRisk(val);
+        list.innerHTML += `
+            <div class="pollen-card" onclick="openDetail('${key}', ${val})">
+                <div class="pollen-icon ${config.bg}">${config.icon}</div>
+                <div class="pollen-info">
+                    <div class="pollen-name">${config.name}</div>
+                    <div class="pollen-level">Valore attuale: ${val}</div>
+                </div>
+                <span class="risk-badge ${risk.cls}">${risk.label}</span>
+            </div>
+        `;
+    });
+}
+
+function renderForecast(hourly) {
+    const strip = document.getElementById('forecastStrip');
+    strip.innerHTML = '';
+    for (let i = 0; i < 168; i += 24) {
+        const date = new Date(hourly.time[i]);
+        const dayName = i === 0 ? 'Oggi' : date.toLocaleDateString('it-IT', { weekday: 'short' });
+        const avg = (hourly.grass_pollen[i] + hourly.birch_pollen[i]) / 2;
+        const risk = getRisk(avg);
+        strip.innerHTML += `
+            <div class="day-card ${i === 0 ? 'today' : ''}">
+                <div style="font-size:11px; color:#888;">${dayName}</div>
+                <div style="width:12px; height:12px; border-radius:50%; background:${risk.color}; margin:10px auto;"></div>
+                <div style="font-size:11px; font-weight:bold; color:${risk.color}">${risk.label}</div>
+            </div>
+        `;
+    }
+}
+
+function updateSummary(current) {
+    let maxVal = 0, maxName = 'Nessuno';
+    Object.keys(POLLEN_CONFIG).forEach(key => {
+        if (current[key] > maxVal) { maxVal = current[key]; maxName = POLLEN_CONFIG[key].name; }
+    });
+    const risk = getRisk(maxVal);
+    document.getElementById('todayRisk').textContent = risk.label;
+    document.getElementById('todayRisk').style.color = risk.color;
+    document.getElementById('maxType').textContent = maxName;
+}
+
+function openDetail(key, val) {
+    const config = POLLEN_CONFIG[key];
+    document.getElementById('detailName').textContent = config.name;
+    document.getElementById('detailBody').innerHTML = `${config.desc}<br><br><strong>Livello rilevato:</strong> ${val} / 5<br><strong>Grado di rischio:</strong> ${getRisk(val).label}`;
+    document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); }
+
+window.onload = () => {
+    document.getElementById('cityInput').value = "Milano";
+    searchCity();
+};
+
+document.getElementById('cityInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchCity(); });
+</script>
+</body>
+</html>
